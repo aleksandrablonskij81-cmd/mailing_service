@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'mailing',         # наше приложение
+    'mailing',
+    'users',# наше приложение
     'django_redis',    # для кеширования через Redis
 ]
 
@@ -153,7 +154,6 @@ CACHES = {
 
 
 # ===== ПОЧТА =====
-
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@mailing-service.com'
 
@@ -165,9 +165,11 @@ DEFAULT_FROM_EMAIL = 'noreply@mailing-service.com'
 # EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 # EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
-
 # ===== АУТЕНТИФИКАЦИЯ =====
 
 LOGIN_URL = '/users/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+# ===== КАСТОМНАЯ МОДЕЛЬ ПОЛЬЗОВАТЕЛЯ =====
+AUTH_USER_MODEL = 'users.CustomUser'
