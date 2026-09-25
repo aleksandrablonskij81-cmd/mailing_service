@@ -13,11 +13,12 @@
 ## Установка
 
 1. Клонировать репозиторий
-2. Создать виртуальное окружение
-3. Установить зависимости: `pip install -r requirements.txt`
-4. Создать `.env` по примеру `.env.template`
-5. Применить миграции: `python manage.py migrate`
-6. Запустить сервер: `python manage.py runserver`
+2. Создать виртуальное окружение: `python -m venv .venv`
+3. Активировать: `source .venv/bin/activate`
+4. Установить зависимости: `pip install -r requirements.txt`
+5. Создать `.env` по примеру `.env.template`
+6. Применить миграции: `python manage.py migrate`
+7. Запустить сервер: `python manage.py runserver`
 
 ## Автор
 
