@@ -6,8 +6,10 @@ from django.views.generic import (
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 from .models import Recipient, Message, Mailing, Attempt
 from .forms import RecipientForm, MessageForm, MailingForm
+from .services import send_mailing as send_mailing_service
 
 
 # ===== ГЛАВНАЯ СТРАНИЦА =====
@@ -182,3 +184,15 @@ class AttemptListView(ListView):
     model = Attempt
     template_name = 'mailing/attempt_list.html'
     context_object_name = 'attempts'
+
+
+# ===== ЗАПУСК РАССЫЛКИ =====
+@require_POST
+def send_mailing_view(request, pk):
+    """Запуск рассылки вручную"""
+    success, message = send_mailing_service(pk)
+    if success:
+        messages.success(request, message)
+    else:
+        messages.error(request, message)
+    return redirect('mailing:mailing_detail', pk=pk)
