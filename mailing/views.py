@@ -4,43 +4,56 @@ from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
 )
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.core.exceptions import PermissionDenied
+from django.core.cache import cache
 from .models import Recipient, Message, Mailing, Attempt
 from .forms import RecipientForm, MessageForm, MailingForm
 from .services import send_mailing as send_mailing_service
 
 
+User = get_user_model()
+
+
+# ===== ГЛАВНАЯ СТРАНИЦА (С КЕШИРОВАНИЕМ) =====
 def home(request):
-    """Главная страница со статистикой"""
-    total_mailings = Mailing.objects.count()
-    active_mailings = Mailing.objects.filter(
-        start_time__lte=timezone.now(),
-        end_time__gte=timezone.now(),
-        status=Mailing.STATUS_STARTED,
-        is_disabled=False  # не считаем отключённые
-    ).count()
-    total_recipients = Recipient.objects.count()
+    """Главная страница со статистикой с кешированием"""
+    cache_key = 'home_statistics'
+    context = cache.get(cache_key)
 
-    # Статистика попыток
-    total_attempts = Attempt.objects.count()
-    successful_attempts = Attempt.objects.filter(status=Attempt.STATUS_SUCCESS).count()
-    failed_attempts = Attempt.objects.filter(status=Attempt.STATUS_FAILED).count()
+    if context is None:
+        total_mailings = Mailing.objects.count()
+        active_mailings = Mailing.objects.filter(
+            start_time__lte=timezone.now(),
+            end_time__gte=timezone.now(),
+            status=Mailing.STATUS_STARTED,
+            is_disabled=False
+        ).count()
+        total_recipients = Recipient.objects.count()
 
-    context = {
-        'total_mailings': total_mailings,
-        'active_mailings': active_mailings,
-        'total_recipients': total_recipients,
-        'total_attempts': total_attempts,
-        'successful_attempts': successful_attempts,
-        'failed_attempts': failed_attempts,
-    }
+        total_attempts = Attempt.objects.count()
+        successful_attempts = Attempt.objects.filter(status=Attempt.STATUS_SUCCESS).count()
+        failed_attempts = Attempt.objects.filter(status=Attempt.STATUS_FAILED).count()
+
+        context = {
+            'total_mailings': total_mailings,
+            'active_mailings': active_mailings,
+            'total_recipients': total_recipients,
+            'total_attempts': total_attempts,
+            'successful_attempts': successful_attempts,
+            'failed_attempts': failed_attempts,
+        }
+
+        cache.set(cache_key, context, 60 * 5)  # 5 минут
+
     return render(request, 'mailing/home.html', context)
 
 
 def is_manager(user):
+    """Проверка: пользователь в группе Менеджер"""
     return user.groups.filter(name='Менеджер').exists()
 
 
@@ -261,11 +274,6 @@ def toggle_mailing_view(request, pk):
 
 
 # ===== СПИСОК ПОЛЬЗОВАТЕЛЕЙ (МЕНЕДЖЕР) =====
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
-
 class UserListView(LoginRequiredMixin, ListView):
     model = User
     template_name = 'mailing/user_list.html'
