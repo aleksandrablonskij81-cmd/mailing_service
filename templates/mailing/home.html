@@ -5,7 +5,8 @@
 {% block content %}
 <h1 class="mb-4">📊 Статистика сервиса</h1>
 
-<div class="row">
+<!-- Основные показатели -->
+<div class="row mb-4">
     <div class="col-md-4 mb-3">
         <div class="card text-white bg-primary">
             <div class="card-body">
@@ -30,5 +31,40 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Статистика попыток -->
+<h2 class="mb-3">📈 Попытки рассылок</h2>
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <div class="card text-white bg-secondary">
+            <div class="card-body">
+                <h5 class="card-title">Всего попыток</h5>
+                <p class="card-text display-4">{{ total_attempts }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">✅ Успешных</h5>
+                <p class="card-text display-4">{{ successful_attempts }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h5 class="card-title">❌ Неуспешных</h5>
+                <p class="card-text display-4">{{ failed_attempts }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Кнопки быстрых действий -->
+<div class="mt-4">
+    <a href="{% url 'mailing:mailing_list' %}" class="btn btn-primary">📨 Мои рассылки</a>
+    <a href="{% url 'mailing:attempt_list' %}" class="btn btn-info">📊 Все попытки</a>
 </div>
 {% endblock %}

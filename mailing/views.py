@@ -13,20 +13,29 @@ from .forms import RecipientForm, MessageForm, MailingForm
 from .services import send_mailing as send_mailing_service
 
 
-# ===== ГЛАВНАЯ СТРАНИЦА =====
 def home(request):
+    """Главная страница со статистикой"""
     total_mailings = Mailing.objects.count()
     active_mailings = Mailing.objects.filter(
         start_time__lte=timezone.now(),
         end_time__gte=timezone.now(),
-        status=Mailing.STATUS_STARTED
+        status=Mailing.STATUS_STARTED,
+        is_disabled=False  # не считаем отключённые
     ).count()
     total_recipients = Recipient.objects.count()
+
+    # Статистика попыток
+    total_attempts = Attempt.objects.count()
+    successful_attempts = Attempt.objects.filter(status=Attempt.STATUS_SUCCESS).count()
+    failed_attempts = Attempt.objects.filter(status=Attempt.STATUS_FAILED).count()
 
     context = {
         'total_mailings': total_mailings,
         'active_mailings': active_mailings,
         'total_recipients': total_recipients,
+        'total_attempts': total_attempts,
+        'successful_attempts': successful_attempts,
+        'failed_attempts': failed_attempts,
     }
     return render(request, 'mailing/home.html', context)
 
