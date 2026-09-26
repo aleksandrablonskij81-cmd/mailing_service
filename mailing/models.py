@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.conf import settings
 
 
 class Recipient(models.Model):
@@ -16,6 +17,14 @@ class Recipient(models.Model):
     comment = models.TextField(
         blank=True,
         verbose_name='Комментарий'
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='recipients',
+        verbose_name='Владелец'
     )
 
     class Meta:
@@ -35,6 +44,14 @@ class Message(models.Model):
     )
     body = models.TextField(
         verbose_name='Тело письма'
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='messages',
+        verbose_name='Владелец'
     )
 
     class Meta:
@@ -79,6 +96,18 @@ class Mailing(models.Model):
         Recipient,
         verbose_name='Получатели'
     )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='mailings',
+        verbose_name='Владелец'
+    )
+    is_disabled = models.BooleanField(
+        default=False,
+        verbose_name='Отключена'
+    )
 
     class Meta:
         verbose_name = 'Рассылка'
@@ -89,14 +118,12 @@ class Mailing(models.Model):
         return f'Рассылка #{self.pk} ({self.status})'
 
     def clean(self):
-        """Валидация"""
         if self.start_time and self.start_time < timezone.now():
             raise ValidationError({'start_time': 'Дата начала не может быть в прошлом.'})
         if self.start_time and self.end_time and self.start_time >= self.end_time:
             raise ValidationError({'end_time': 'Дата окончания должна быть позже даты начала.'})
 
     def update_status(self):
-        """Динамический пересчёт статуса рассылки"""
         now = timezone.now()
         if now < self.start_time:
             new_status = self.STATUS_CREATED

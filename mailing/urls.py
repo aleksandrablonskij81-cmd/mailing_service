@@ -4,7 +4,6 @@ from . import views
 app_name = 'mailing'
 
 urlpatterns = [
-    # Главная
     path('', views.home, name='home'),
 
     # Получатели
@@ -27,8 +26,13 @@ urlpatterns = [
     path('mailings/<int:pk>/', views.MailingDetailView.as_view(), name='mailing_detail'),
     path('mailings/<int:pk>/edit/', views.MailingUpdateView.as_view(), name='mailing_update'),
     path('mailings/<int:pk>/delete/', views.MailingDeleteView.as_view(), name='mailing_delete'),
-    path('mailings/<int:pk>/send/', views.send_mailing_view, name='mailing_send'),  # 👈 НОВЫЙ URL
+    path('mailings/<int:pk>/send/', views.send_mailing_view, name='mailing_send'),
+    path('mailings/<int:pk>/toggle/', views.toggle_mailing_view, name='mailing_toggle'),
 
-    # Попытки рассылок
+    # Попытки
     path('attempts/', views.AttemptListView.as_view(), name='attempt_list'),
+
+    # Пользователи (менеджер)
+    path('users/', views.UserListView.as_view(), name='user_list'),
+    path('users/<int:pk>/toggle/', views.toggle_user_active_view, name='user_toggle'),
 ]
