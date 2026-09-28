@@ -14,6 +14,14 @@ def send_mailing(mailing_id):
     except Mailing.DoesNotExist:
         return False, 'Рассылка не найдена.'
 
+    # Проверка: отключена ли рассылка
+    if mailing.is_disabled:
+        return False, 'Рассылка отключена менеджером, отправка невозможна.'
+
+    # Проверка: завершена ли рассылка
+    if mailing.status == Mailing.STATUS_FINISHED:
+        return False, 'Рассылка уже завершена.'
+
     now = timezone.now()
 
     # Проверка времени
