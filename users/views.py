@@ -15,7 +15,7 @@ def register(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.is_active = False  # Неактивен до подтверждения email
+            user.is_active = False
             user.save()
             send_verification_email(user, request)
             messages.success(
@@ -34,18 +34,21 @@ def register(request):
 
 
 def verify_email(request, token):
-    """Подтверждение email по токену (в нашем случае — по email)"""
+    """Подтверждение email по одноразовому токену"""
     try:
-        user = CustomUser.objects.get(email=token)
-        if user.is_email_verified:
-            messages.info(request, 'Email уже подтверждён.')
-        else:
-            user.is_email_verified = True
-            user.is_active = True
-            user.save()
-            messages.success(request, 'Email подтверждён! Теперь вы можете войти.')
+        user = CustomUser.objects.get(confirmation_token=token)
     except CustomUser.DoesNotExist:
-        messages.error(request, 'Неверная ссылка подтверждения.')
+        messages.error(request, 'Неверная или уже использованная ссылка подтверждения.')
+        return redirect('users:login')
+
+    if user.is_email_verified:
+        messages.info(request, 'Email уже подтверждён.')
+    else:
+        user.is_email_verified = True
+        user.is_active = True
+        user.confirmation_token = None
+        user.save(update_fields=['is_email_verified', 'is_active', 'confirmation_token'])
+        messages.success(request, 'Email подтверждён! Теперь вы можете войти.')
     return redirect('users:login')
 
 
@@ -60,7 +63,6 @@ def login_view(request):
             email = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
 
-            # 👇 Аутентификация по email (USERNAME_FIELD)
             user = authenticate(request, username=email, password=password)
 
             if user is not None:

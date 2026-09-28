@@ -4,6 +4,7 @@ from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView
 )
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.utils import timezone
@@ -54,7 +55,7 @@ def home(request):
 
 def is_manager(user):
     """Проверка: пользователь в группе Менеджер"""
-    return user.groups.filter(name='Менеджер').exists()
+    return user.is_authenticated and user.groups.filter(name='Менеджер').exists()
 
 
 # ===== ПОЛУЧАТЕЛИ =====
@@ -73,6 +74,12 @@ class RecipientDetailView(LoginRequiredMixin, DetailView):
     model = Recipient
     template_name = 'mailing/recipient_detail.html'
     context_object_name = 'recipient'
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if is_manager(self.request.user):
+            return qs
+        return qs.filter(owner=self.request.user)
 
 
 class RecipientCreateView(LoginRequiredMixin, CreateView):
@@ -132,6 +139,12 @@ class MessageDetailView(LoginRequiredMixin, DetailView):
     model = Message
     template_name = 'mailing/message_detail.html'
     context_object_name = 'message'
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if is_manager(self.request.user):
+            return qs
+        return qs.filter(owner=self.request.user)
 
 
 class MessageCreateView(LoginRequiredMixin, CreateView):
@@ -193,6 +206,12 @@ class MailingDetailView(LoginRequiredMixin, DetailView):
     template_name = 'mailing/mailing_detail.html'
     context_object_name = 'mailing'
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if is_manager(self.request.user):
+            return qs
+        return qs.filter(owner=self.request.user)
+
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
         obj.update_status()
@@ -248,9 +267,14 @@ class AttemptListView(LoginRequiredMixin, ListView):
         return Attempt.objects.filter(mailing__owner=self.request.user)
 
 
-# ===== ЗАПУСК РАССЫЛКИ =====
+# ===== ЗАПУСК РАССЫЛКИ (ЗАЩИЩЕНО) =====
+@login_required
 @require_POST
 def send_mailing_view(request, pk):
+    mailing = get_object_or_404(Mailing, pk=pk)
+    if mailing.owner != request.user and not is_manager(request.user):
+        raise PermissionDenied('Вы не можете запускать чужую рассылку.')
+
     success, message = send_mailing_service(pk)
     if success:
         messages.success(request, message)
@@ -260,6 +284,7 @@ def send_mailing_view(request, pk):
 
 
 # ===== ОТКЛЮЧЕНИЕ РАССЫЛКИ (МЕНЕДЖЕР) =====
+@login_required
 @require_POST
 def toggle_mailing_view(request, pk):
     if not is_manager(request.user):
@@ -285,6 +310,7 @@ class UserListView(LoginRequiredMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
 
+@login_required
 @require_POST
 def toggle_user_active_view(request, pk):
     if not is_manager(request.user):

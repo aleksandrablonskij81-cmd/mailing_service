@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -8,6 +10,12 @@ class CustomUser(AbstractUser):
     is_email_verified = models.BooleanField(
         default=False,
         verbose_name='Email подтверждён'
+    )
+    confirmation_token = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        verbose_name='Токен подтверждения email'
     )
 
     USERNAME_FIELD = 'email'
