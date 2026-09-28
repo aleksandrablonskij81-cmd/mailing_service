@@ -1,7 +1,5 @@
-asgiref==3.12.1
-Django==6.1.1
-django-redis==7.0.0
-psycopg2-binary==2.9.13
-python-dotenv==1.2.3
-redis==8.1.0
-sqlparse==0.6.0
+Django>=6.1
+psycopg2-binary
+redis
+django-redis
+python-dotenv
